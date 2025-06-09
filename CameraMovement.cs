@@ -12,9 +12,14 @@ public class CameraMovement : MonoBehaviour
     public float minZoom = 2f;
     public float maxZoom = 20f;
 
+    [Tooltip("How fast the camera accelerates and decelerates (lower = snappier, higher = smoother)")]
+    public float smoothTime = 0.1f;
+
     private Vector3 dragOrigin;
     private bool isDragging = false;
     private Camera cam;
+
+    private Vector3 currentVelocity = Vector3.zero;
 
     void Start()
     {
@@ -52,21 +57,23 @@ public class CameraMovement : MonoBehaviour
 
     void HandleKeyboardMove()
     {
-        Vector3 move = Vector3.zero;
+        Vector3 input = Vector3.zero;
 
-        if (Input.GetKey(KeyCode.W)) move.y += 1;
-        if (Input.GetKey(KeyCode.S)) move.y -= 1;
-        if (Input.GetKey(KeyCode.A)) move.x -= 1;
-        if (Input.GetKey(KeyCode.D)) move.x += 1;
+        if (Input.GetKey(KeyCode.W)) input.y += 1;
+        if (Input.GetKey(KeyCode.S)) input.y -= 1;
+        if (Input.GetKey(KeyCode.A)) input.x -= 1;
+        if (Input.GetKey(KeyCode.D)) input.x += 1;
 
-        if (move != Vector3.zero)
-        {
-            float speed = moveSpeed;
-            if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
-                speed *= runMultiplier;
+        float targetSpeed = moveSpeed;
 
-            transform.position += move.normalized * speed * Time.deltaTime;
-        }
+        if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+            targetSpeed *= runMultiplier;
+
+        Vector3 targetVelocity = input.normalized * targetSpeed;
+
+        currentVelocity = Vector3.Lerp(currentVelocity, targetVelocity, Time.deltaTime / smoothTime);
+
+        transform.position += currentVelocity * Time.deltaTime;
     }
 
     void HandleEdgeScroll()
